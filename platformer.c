@@ -340,8 +340,8 @@ void PlayerInit(void){
 void PlayerDraw(void){
     DrawRectangle(player.position.x - player.width*0.5, player.position.y-player.height +1, player.width, player.height, RED);
     
-    float xVel = player.velocity.x*delta;
-    int xsp = abs(xVel) >> 12 * sign(xVel);
+    float xVel = player.velocity.x*delta + player.hsp;
+    int xsp = ((int)(abs(xVel)) >> 12) * sign(xVel);
     DrawText(TextFormat("Vel.x: %i", xsp), 16, 16, 8, BLACK);
     
     float yVel = player.velocity.y*delta + player.vsp;
