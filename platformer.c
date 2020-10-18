@@ -113,6 +113,13 @@ static int MapGetTile(int x, int y);
 static int MapGetTileWorld(int x, int y);
 static int TileHeight(int x, int y, int tile);
 
+static void MapInit(void);
+static void PlayerInit(void);
+static void InputUpdate(void);
+static void PlayerUpdate(void);
+static void PlayerDraw(void);
+static void MapDraw(void);
+
 //------------------------------------------------------------------------------------
 // Utility Functions Declaration (local)
 //------------------------------------------------------------------------------------
@@ -121,8 +128,7 @@ static int sign(float x);
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
-int main(void)
-{
+int main(void){
     // Initialization (Note windowTitle is unused on Android)
     //---------------------------------------------------------
     TILE_MAP_WIDTH = 20;
@@ -165,14 +171,8 @@ int main(void)
 //------------------------------------------------------------------------------------
 // Module Functions Definitions (local)
 //------------------------------------------------------------------------------------
-
-
-static void MapInit(void);
-static void PlayerInit(void);
-
 // Initialize game variables
-void InitGame(void)
-{
+void InitGame(void){
     pause = false;
     camera.offset = (Vector2){0.0, 0.0};
     camera.target = (Vector2){0.0, 0.0};
@@ -182,17 +182,11 @@ void InitGame(void)
     PlayerInit();
 }
 
-
-static void InputUpdate(void);
-static void PlayerUpdate(void);
-
 // Update game (one frame)
-void UpdateGame(void)
-{
+void UpdateGame(void){
     delta = GetFrameTime();
     if (!gameOver)
     {
-        InputUpdate();
         PlayerUpdate();
     }    else
     {
@@ -204,13 +198,8 @@ void UpdateGame(void)
     }
 }
 
-
-static void PlayerDraw(void);
-static void MapDraw(void);
-
 // Draw game (one frame)
-void DrawGame(void)
-{
+void DrawGame(void){
     BeginDrawing();
     BeginMode2D(camera);
         ClearBackground(RAYWHITE);
@@ -229,8 +218,8 @@ void DrawGame(void)
 }
 
 // Unload game variables
-void UnloadGame(void)
-{
+void UnloadGame(void){
+    //free allocated memory
     free(tiles);
 }
 
@@ -251,6 +240,8 @@ void MapInit(void){
             }
         }
     }
+    
+    //manual cell population for platforms
     tiles[3+8*TILE_MAP_WIDTH] = BLOCK;
     tiles[4+8*TILE_MAP_WIDTH] = BLOCK;
     tiles[5+8*TILE_MAP_WIDTH] = BLOCK;
@@ -267,6 +258,7 @@ void MapInit(void){
 }
 
 void MapDraw(void){
+    //parse through tile map and draw rectangles
     for (int y = 0; y < TILE_MAP_HEIGHT; y++){
         for (int x = 0; x < TILE_MAP_WIDTH; x++){
             // Draw tiles
@@ -278,6 +270,7 @@ void MapDraw(void){
 }
 
 int MapGetTileWorld(int x, int y){
+    //Returns tile ID using world position
     x /= TILE_SIZE;
     y /= TILE_SIZE;
     if (x < 0 || x > TILE_MAP_WIDTH || y < 0 || y > TILE_MAP_HEIGHT) {
@@ -287,6 +280,7 @@ int MapGetTileWorld(int x, int y){
 }
 
 int MapGetTile(int x, int y){
+    //Returns tile ID using tile position withing tile map.
     if (x < 0 || x > TILE_MAP_WIDTH || y < 0 || y > TILE_MAP_HEIGHT) {
         return EMPTY;
     }
@@ -294,6 +288,7 @@ int MapGetTile(int x, int y){
 }
 
 int TileHeight(int x, int y, int tile){
+    //returns one pixel above solid. Extendable for slopes.
     switch(tile){
         case EMPTY:
             break;
@@ -341,7 +336,7 @@ void PlayerInit(void){
     
     player.control = &input;
 }
-static int tile;
+
 void PlayerDraw(void){
     DrawRectangle(player.position.x - player.width*0.5, player.position.y-player.height +1, player.width, player.height, RED);
     
@@ -352,19 +347,18 @@ void PlayerDraw(void){
     float yVel = player.velocity.y*delta + player.vsp;
     int ysp = ((int)(abs(yVel)) >> 12) * sign(yVel);
     DrawText(TextFormat("Vel.y: %i", ysp), 16, 24, 8, BLACK);
-    DrawText(TextFormat("tile: %i", tile), 16, 32, 8, BLACK);
 }
 
 void PlayerUpdate(void){
+    InputUpdate();
     EntityMoveUpdate(&player);
 }
 
 //------------------------------------------------
-// Utility functions
+// Physics functions
 //------------------------------------------------
 void EntityMoveUpdate(Entity *instance){
     GroundCheck(instance);
-
     GetDirection(instance);
     MoveCalc(instance);
     GravityCalc(instance);
