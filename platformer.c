@@ -65,6 +65,11 @@ typedef struct Entity {
     Input *control;
 } Entity;
 
+typedef struct Coin{
+    Vector2 position;
+    bool visible;
+} Coin;
+
 //------------------------------------------------------------------------------------
 // Global Variables Declaration
 //------------------------------------------------------------------------------------
@@ -80,21 +85,35 @@ int screenWidth;
 static int screenHeight;
 
 static float delta;
-static bool gameOver = false;
-static bool pause = false;
+static bool win = false;
+static int score = 0;
 
 int *tiles;
 static Entity player = { 0 };
-static Camera2D camera = {0};
 static Input input = {false, false, false, false, false};
+static Camera2D camera = {0};
+
+#define coinCount 10
+static Coin coins[coinCount] = {
+    {(Vector2){1*16+6,7*16+6}, true},
+    {(Vector2){3*16+6,5*16+6}, true},
+    {(Vector2){4*16+6,5*16+6}, true},
+    {(Vector2){5*16+6,5*16+6}, true},
+    {(Vector2){8*16+6,3*16+6}, true},
+    {(Vector2){9*16+6,3*16+6}, true},
+    {(Vector2){10*16+6,3*16+6}, true},
+    {(Vector2){13*16+6,4*16+6}, true},
+    {(Vector2){14*16+6,4*16+6}, true},
+    {(Vector2){15*16+6,4*16+6}, true},
+};
 
 //------------------------------------------------------------------------------------
 // Module Functions Declaration (local)
 //------------------------------------------------------------------------------------
-static void InitGame(void);         // Initialize game
-static void UpdateGame(void);       // Update game (one frame)
-static void DrawGame(void);         // Draw game (one frame)
-static void UnloadGame(void);       // Unload game
+static void GameInit(void);         // Initialize game
+static void GameUpdate(void);       // Update game (one frame)
+static void GameDraw(void);         // Draw game (one frame)
+static void GameUnload(void);       // Unload game
 
 //------------------------------------------------------------------------------------
 // Movement Functions Declaration (local)
@@ -119,6 +138,9 @@ static void InputUpdate(void);
 static void PlayerUpdate(void);
 static void PlayerDraw(void);
 static void MapDraw(void);
+static void CoinInit(void);
+static void CoinDraw(void);
+static void CoinUpdate(void);
 
 //------------------------------------------------------------------------------------
 // Utility Functions Declaration (local)
@@ -139,7 +161,7 @@ int main(void){
     
     SetConfigFlags(FLAG_VSYNC_HINT);    //movement jitters without it
     InitWindow(screenWidth, screenHeight, "sample game: platformer");
-    InitGame();
+    GameInit();
 
 
 #if defined(PLATFORM_WEB)
@@ -153,14 +175,14 @@ int main(void){
     {
         // Update and Draw
         //----------------------------------------------------------------------------------
-        UpdateGame();
-        DrawGame();
+        GameUpdate();
+        GameDraw();
         //----------------------------------------------------------------------------------
     }
 #endif
     // De-Initialization
     //--------------------------------------------------------------------------------------
-    UnloadGame();         // Unload loaded data (textures, sounds, models...)
+    GameUnload();         // Unload loaded data (textures, sounds, models...)
 
     CloseWindow();        // Close window and OpenGL context
     //--------------------------------------------------------------------------------------
@@ -172,53 +194,55 @@ int main(void){
 // Module Functions Definitions (local)
 //------------------------------------------------------------------------------------
 // Initialize game variables
-void InitGame(void){
-    pause = false;
+void GameInit(void){
+    win = false;
+    score = 0;
     camera.offset = (Vector2){0.0, 0.0};
     camera.target = (Vector2){0.0, 0.0};
     camera.rotation = 0.0f;
     camera.zoom = screenScale;
     MapInit();
     PlayerInit();
+    CoinInit();
 }
 
 // Update game (one frame)
-void UpdateGame(void){
+void GameUpdate(void){
     delta = GetFrameTime();
-    if (!gameOver)
-    {
-        PlayerUpdate();
-    }    else
-    {
-        if (IsKeyPressed(KEY_ENTER))
-        {
-            InitGame();
-            gameOver = false;
+    
+    PlayerUpdate();
+    CoinUpdate();
+    
+    if(win){
+        if (IsKeyPressed(KEY_ENTER)){
+            GameInit();
         }
     }
 }
 
 // Draw game (one frame)
-void DrawGame(void){
+void GameDraw(void){
     BeginDrawing();
     BeginMode2D(camera);
         ClearBackground(RAYWHITE);
 
-        if (!gameOver)
-        {
-            // Draw game
-            MapDraw();
-            PlayerDraw();
+        // Draw game
+        MapDraw();
+        CoinDraw();
+        PlayerDraw();
+        
+        
+        EndMode2D();
+        DrawText(TextFormat("SCORE: %i", score), GetScreenWidth()/2 - MeasureText(TextFormat("SCORE: %i", score), 40)/2, GetScreenHeight()/5 - 50, 40, BLACK);
 
-            if (pause) DrawText("GAME PAUSED", screenWidth/2 - MeasureText("GAME PAUSED", 40)/2, screenHeight/2 - 40, 40, GRAY);
+        if(win){
+            DrawText("PRESS [ENTER] TO PLAY AGAIN", GetScreenWidth()/2 - MeasureText("PRESS [ENTER] TO PLAY AGAIN", 20)/2, GetScreenHeight()/2 - 50, 20, GRAY);
         }
-        else DrawText("PRESS [ENTER] TO PLAY AGAIN", GetScreenWidth()/2 - MeasureText("PRESS [ENTER] TO PLAY AGAIN", 20)/2, GetScreenHeight()/2 - 50, 20, GRAY);
-    EndMode2D();
     EndDrawing();
 }
 
 // Unload game variables
-void UnloadGame(void){
+void GameUnload(void){
     //free allocated memory
     free(tiles);
 }
@@ -332,26 +356,48 @@ void PlayerInit(void){
     player.width = 8;
     player.height = 16;
 
-    player.isGrounded = false;
+    player.isGrounded   = false;
+    player.isJumping    = false;
     
     player.control = &input;
 }
 
 void PlayerDraw(void){
     DrawRectangle(player.position.x - player.width*0.5, player.position.y-player.height +1, player.width, player.height, RED);
-    
-    float xVel = player.velocity.x*delta + player.hsp;
-    int xsp = ((int)(abs(xVel)) >> 12) * sign(xVel);
-    DrawText(TextFormat("Vel.x: %i", xsp), 16, 16, 8, BLACK);
-    
-    float yVel = player.velocity.y*delta + player.vsp;
-    int ysp = ((int)(abs(yVel)) >> 12) * sign(yVel);
-    DrawText(TextFormat("Vel.y: %i", ysp), 16, 24, 8, BLACK);
 }
 
 void PlayerUpdate(void){
     InputUpdate();
     EntityMoveUpdate(&player);
+}
+
+
+void CoinInit(void){
+    for(int i=0; i<coinCount; i++){
+        coins[i].visible = true;
+    }
+}
+
+void CoinDraw(void){
+    for(int i=0; i<coinCount; i++){
+        if(coins[i].visible){
+            DrawRectangle((int)coins[i].position.x, (int)coins[i].position.y, 4.0, 4.0, GOLD);
+        }
+    }
+}
+
+void CoinUpdate(void){
+    Rectangle playerRect = (Rectangle){player.position.x - player.width*0.5, player.position.y-player.height +1, player.width, player.height};
+    for(int i=0; i<coinCount; i++){
+        if(coins[i].visible){
+            Rectangle coinRect = (Rectangle){coins[i].position.x, coins[i].position.y, 4.0, 4.0};
+            if(CheckCollisionRecs(playerRect, coinRect)){
+                coins[i].visible = false;
+                score += 1;
+            }
+        }
+    }
+    win = score == coinCount;
 }
 
 //------------------------------------------------
