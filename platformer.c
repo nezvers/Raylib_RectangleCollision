@@ -4,7 +4,7 @@
 *
 *   Sample game developed by Agnis "NeZvers" Aldiòð
 *
-*   This game has been created using raylib v1.3 (www.raylib.com)
+*   This game has been created using raylib v3.0 (www.raylib.com)
 *   raylib is licensed under an unmodified zlib/libpng license (View raylib.h for details)
 *
 *   Copyright (c) 2015 Ramon Santamaria (@raysan5)
