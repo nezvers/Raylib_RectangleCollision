@@ -77,8 +77,8 @@ const int TILE_SIZE = 16;
 const int TILE_SHIFT = 4;   //used in bitshift  | bit of TILE_SIZE
 const int TILE_ROUND = 15;  //used in bitwise operation | TILE_SIZE - 1
 
-int TILE_MAP_WIDTH;
-int TILE_MAP_HEIGHT;
+#define TILE_MAP_WIDTH 20
+#define TILE_MAP_HEIGHT 12
 
 float screenScale;
 int screenWidth;
@@ -88,7 +88,7 @@ static float delta;
 static bool win = false;
 static int score = 0;
 
-int *tiles;
+static int tiles [TILE_MAP_WIDTH * TILE_MAP_HEIGHT];
 static Entity player = { 0 };
 static Input input = {false, false, false, false, false};
 static Camera2D camera = {0};
@@ -153,8 +153,6 @@ static int sign(float x);
 int main(void){
     // Initialization (Note windowTitle is unused on Android)
     //---------------------------------------------------------
-    TILE_MAP_WIDTH = 20;
-    TILE_MAP_HEIGHT = 12;
     screenScale = 2.0;
     screenWidth = TILE_SIZE * TILE_MAP_WIDTH * (int)screenScale;
     screenHeight = TILE_SIZE * TILE_MAP_HEIGHT * (int)screenScale;
@@ -243,42 +241,38 @@ void GameDraw(void){
 
 // Unload game variables
 void GameUnload(void){
-    //free allocated memory
-    free(tiles);
+    
 }
 
 void MapInit(void){
-    //Allocate memory for all tiles
-    tiles = realloc(tiles, TILE_MAP_WIDTH*TILE_MAP_HEIGHT * sizeof(int));
-
     //Set tiles - borders
     for (int y = 0; y < TILE_MAP_HEIGHT; y++){
         for (int x = 0; x < TILE_MAP_WIDTH; x++){
             // Solid tiles
             if (y == 0 || x == 0 || y == TILE_MAP_HEIGHT-1 || x == TILE_MAP_WIDTH-1){
-                tiles[x+y*TILE_MAP_WIDTH] = BLOCK;
+                tiles[x+y * TILE_MAP_WIDTH] = BLOCK;
             }
             //Empty tiles
             else{
-                tiles[x+y*TILE_MAP_WIDTH] = EMPTY;
+                tiles[x+y * TILE_MAP_WIDTH] = EMPTY;
             }
         }
     }
     
     //manual cell population for platforms
-    tiles[3+8*TILE_MAP_WIDTH] = BLOCK;
-    tiles[4+8*TILE_MAP_WIDTH] = BLOCK;
-    tiles[5+8*TILE_MAP_WIDTH] = BLOCK;
+    tiles[3+8 * TILE_MAP_WIDTH] = BLOCK;
+    tiles[4+8 * TILE_MAP_WIDTH] = BLOCK;
+    tiles[5+8 * TILE_MAP_WIDTH] = BLOCK;
     
-    tiles[8+6*TILE_MAP_WIDTH] = BLOCK;
-    tiles[9+6*TILE_MAP_WIDTH] = BLOCK;
-    tiles[10+6*TILE_MAP_WIDTH] = BLOCK;
+    tiles[8+6 * TILE_MAP_WIDTH] = BLOCK;
+    tiles[9+6 * TILE_MAP_WIDTH] = BLOCK;
+    tiles[10+6 * TILE_MAP_WIDTH] = BLOCK;
     
-    tiles[13+7*TILE_MAP_WIDTH] = BLOCK;
-    tiles[14+7*TILE_MAP_WIDTH] = BLOCK;
-    tiles[15+7*TILE_MAP_WIDTH] = BLOCK;
+    tiles[13+7 * TILE_MAP_WIDTH] = BLOCK;
+    tiles[14+7 * TILE_MAP_WIDTH] = BLOCK;
+    tiles[15+7 * TILE_MAP_WIDTH] = BLOCK;
     
-    tiles[1+10*TILE_MAP_WIDTH] = BLOCK;
+    tiles[1+10 * TILE_MAP_WIDTH] = BLOCK;
 }
 
 void MapDraw(void){
