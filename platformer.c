@@ -336,12 +336,12 @@ void PlayerInit(void){
     player.position.x = (float)(TILE_SIZE * TILE_MAP_WIDTH) * 0.5;
     player.position.y = TILE_MAP_HEIGHT*TILE_SIZE - 16.0 -1;
     player.direction = 1.0;
-    //values taken from NES Mario but it's not how Mario muvement is done
-    player.maxSpd = 0x1900 *60;
-    player.acc = 0x01e4 *60 *60;
-    player.dcc = 0x01d0 *60 *60;
-    player.gravity = 0x05d0 * 60 * 60;
-    player.jumpImpulse = -0x6900 *60;
+    
+    player.maxSpd = 1.5625f *60;
+    player.acc = 0.118164 *60 *60;
+    player.dcc =  0.113281 *60 *60;
+    player.gravity = 0.363281 * 60 * 60;
+    player.jumpImpulse = -6.5625 *60;
     player.jumpRelease = player.jumpImpulse * 0.2;
     player.velocity = (Vector2){0.0, 0.0};
     player.hsp = 0;
@@ -405,12 +405,12 @@ void EntityMoveUpdate(Entity* instance) {
     CollisionCheck(instance);
 
     float xVel = instance->velocity.x * delta + instance->hsp;
-    float xsp = (float)((abs((int)xVel)) >> 12) * sign(xVel);
-    instance->hsp = instance->velocity.x * delta - ((abs((int)xsp) << 12) * sign(xsp));
+    float xsp = (float)abs((int)xVel) * sign(xVel);
+    instance->hsp = instance->velocity.x * delta - xsp;
 
     float yVel = instance->velocity.y * delta + instance->vsp;
-    float ysp = (float)((abs((int)yVel)) >> 12) * sign(yVel);
-    instance->vsp = instance->velocity.y * delta - ((abs((int)ysp) << 12) * sign(ysp));
+    float ysp = (float)abs((int)yVel) * sign(yVel);
+    instance->vsp = instance->velocity.y * delta - ysp;
 
 
     instance->position.x += xsp;
@@ -460,11 +460,11 @@ void MoveCalc(Entity* instance) {
         instance->velocity.x = Clamp(instance->velocity.x, -instance->maxSpd, instance->maxSpd);
     }
     else {
-        float hsp = instance->velocity.x;
-        if (abs((int)(0 - hsp)) < instance->dcc * delta) {
+        float xsp = instance->velocity.x;
+        if (abs((int)(0 - xsp)) < instance->dcc * delta) {
             instance->velocity.x = 0;
         }
-        else if (hsp > 0) {
+        else if (xsp > 0) {
             instance->velocity.x -= instance->dcc * delta;
         }
         else {
@@ -515,7 +515,7 @@ void CollisionCheck(Entity* instance) {
 void CollisionHorizontalBlocks(Entity* instance) {
     //get horizontal speed in pixels
     float xVel = instance->velocity.x * delta + instance->hsp;
-    int xsp = ((abs((int)xVel)) >> 12) * sign(xVel);
+    int xsp = abs((int)xVel) * sign(xVel);
 
     //get bounding box side offset
     int side;
@@ -554,7 +554,7 @@ void CollisionHorizontalBlocks(Entity* instance) {
 void CollisionVerticalBlocks(Entity* instance) {
     //get vertical speed in pixels
     float yVel = instance->velocity.y * delta + instance->vsp;
-    int ysp = ((abs((int)yVel)) >> 12) * sign(yVel);
+    int ysp = abs((int)yVel) * sign(yVel);
 
     //get bounding box side offset
     int side;
