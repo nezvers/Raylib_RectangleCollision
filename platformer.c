@@ -397,56 +397,56 @@ void CoinUpdate(void){
 //------------------------------------------------
 // Physics functions
 //------------------------------------------------
-void EntityMoveUpdate(Entity *instance){
+void EntityMoveUpdate(Entity* instance) {
     GroundCheck(instance);
     GetDirection(instance);
     MoveCalc(instance);
     GravityCalc(instance);
     CollisionCheck(instance);
-    
-    float xVel = instance->velocity.x*delta + instance->hsp;
-    float xsp = ((int)(abs(xVel)) >> 12) * sign(xVel);
-    instance->hsp = instance->velocity.x*delta - ((abs(xsp) << 12)*sign(xsp));
-    
-    float yVel = instance->velocity.y*delta + instance->vsp;
-    float ysp = ((int)(abs(yVel)) >> 12) * sign(yVel);
-    instance->vsp = instance->velocity.y*delta - ((abs(ysp) << 12)*sign(ysp));
-    
-    
+
+    float xVel = instance->velocity.x * delta + instance->hsp;
+    float xsp = (float)((abs((int)xVel)) >> 12) * sign(xVel);
+    instance->hsp = instance->velocity.x * delta - ((abs((int)xsp) << 12) * sign(xsp));
+
+    float yVel = instance->velocity.y * delta + instance->vsp;
+    float ysp = (float)((abs((int)yVel)) >> 12) * sign(yVel);
+    instance->vsp = instance->velocity.y * delta - ((abs((int)ysp) << 12) * sign(ysp));
+
+
     instance->position.x += xsp;
-    
+
     instance->position.y += ysp;
-    
+
     //Prototyping Safety net
-    instance->position.x = Clamp(instance->position.x, 0.0, TILE_MAP_WIDTH*TILE_SIZE);
-    instance->position.y = Clamp(instance->position.y, 0.0, TILE_MAP_HEIGHT*TILE_SIZE);
+    instance->position.x = Clamp(instance->position.x, 0.0, TILE_MAP_WIDTH * (float)TILE_SIZE);
+    instance->position.y = Clamp(instance->position.y, 0.0, TILE_MAP_HEIGHT * (float)TILE_SIZE);
 }
 
-void GetDirection(Entity *instance){
-    instance->direction = instance->control->right - instance->control->left;
+void GetDirection(Entity* instance) {
+    instance->direction = (float)(instance->control->right - instance->control->left);
 }
 
-void GroundCheck(Entity *instance){
-    int x = instance->position.x;
-    int y = instance->position.y +1;
+void GroundCheck(Entity* instance) {
+    int x = (int)instance->position.x;
+    int y = (int)instance->position.y + 1;
     instance->isGrounded = false;
-    
-    int c = MapGetTile(x>>TILE_SHIFT, y>>TILE_SHIFT);
-    if(c!=EMPTY){
+
+    int c = MapGetTile(x >> TILE_SHIFT, y >> TILE_SHIFT);
+    if (c != EMPTY) {
         int h = TileHeight(x, y, c);
         instance->isGrounded = (y >= h);
     }
-    if(!instance->isGrounded){
-        int xl = (x - instance->width/2);
-        int l = MapGetTile(xl>>TILE_SHIFT, y>>TILE_SHIFT);
-        if(l!=EMPTY){
+    if (!instance->isGrounded) {
+        int xl = (x - instance->width / 2);
+        int l = MapGetTile(xl >> TILE_SHIFT, y >> TILE_SHIFT);
+        if (l != EMPTY) {
             int h = TileHeight(xl, y, l);
             instance->isGrounded = (y >= h);
         }
-        if(!instance->isGrounded){
-            int xr = (x + instance->width/2-1);
-            int r = MapGetTile(xr>>TILE_SHIFT, y>>TILE_SHIFT);
-            if(r!=EMPTY){
+        if (!instance->isGrounded) {
+            int xr = (x + instance->width / 2 - 1);
+            int r = MapGetTile(xr >> TILE_SHIFT, y >> TILE_SHIFT);
+            if (r != EMPTY) {
                 int h = TileHeight(xr, y, r);
                 instance->isGrounded = (y >= h);
             }
@@ -454,134 +454,135 @@ void GroundCheck(Entity *instance){
     }
 }
 
-void MoveCalc(Entity *instance){
-    if (abs(instance->direction) > 0.01){
+void MoveCalc(Entity* instance) {
+    if (abs((int)instance->direction) > 0.01) {
         instance->velocity.x += instance->direction * instance->acc * delta;
         instance->velocity.x = Clamp(instance->velocity.x, -instance->maxSpd, instance->maxSpd);
-    }else{
+    }
+    else {
         float hsp = instance->velocity.x;
-        if(abs(0-hsp) < instance->dcc *delta){
+        if (abs((int)(0 - hsp)) < instance->dcc * delta) {
             instance->velocity.x = 0;
         }
-        else if(hsp > 0){
-            instance->velocity.x -= instance->dcc *delta;
+        else if (hsp > 0) {
+            instance->velocity.x -= instance->dcc * delta;
         }
-        else{
-            instance->velocity.x += instance->dcc *delta;
+        else {
+            instance->velocity.x += instance->dcc * delta;
         }
     }
 }
 
-void Jump(Entity *instance){
+void Jump(Entity* instance) {
     instance->velocity.y = instance->jumpImpulse;
     instance->isJumping = true;
     instance->isGrounded = false;
 }
 
-void GravityCalc(Entity *instance){
-    if (instance->isGrounded){
-        if (instance->isJumping){
+void GravityCalc(Entity* instance) {
+    if (instance->isGrounded) {
+        if (instance->isJumping) {
             instance->isJumping = false;
             instance->control->jump = false;             //cancel input button
         }
-        else if (!instance->isJumping && instance->control->jump){
+        else if (!instance->isJumping && instance->control->jump) {
             Jump(instance);
         }
     }
-    else{
-        if(instance->isJumping){
-            if(!instance->control->jump){
+    else {
+        if (instance->isJumping) {
+            if (!instance->control->jump) {
                 instance->isJumping = false;
-                if (instance->velocity.y < instance->jumpRelease){
+                if (instance->velocity.y < instance->jumpRelease) {
                     instance->velocity.y = instance->jumpRelease;
                 }
             }
         }
     }
     instance->velocity.y += instance->gravity * delta;
-    if(instance->velocity.y > -instance->jumpImpulse){
+    if (instance->velocity.y > -instance->jumpImpulse) {
         instance->velocity.y = -instance->jumpImpulse;
     }
 }
 
-static void CollisionHorizontalBlocks(Entity *instance);
-static void CollisionVerticalBlocks(Entity *instance);
-void CollisionCheck(Entity *instance){
+static void CollisionHorizontalBlocks(Entity* instance);
+static void CollisionVerticalBlocks(Entity* instance);
+void CollisionCheck(Entity* instance) {
     CollisionHorizontalBlocks(instance);
     CollisionVerticalBlocks(instance);
 }
 
-void CollisionHorizontalBlocks(Entity *instance){
+void CollisionHorizontalBlocks(Entity* instance) {
     //get horizontal speed in pixels
-    float xVel = instance->velocity.x*delta + instance->hsp;
-    int xsp = ((int)(abs(xVel)) >> 12) * sign(xVel);
-    
+    float xVel = instance->velocity.x * delta + instance->hsp;
+    int xsp = ((abs((int)xVel)) >> 12) * sign(xVel);
+
     //get bounding box side offset
     int side;
-    if (xsp > 0){
-        side = instance->width/2-1;
+    if (xsp > 0) {
+        side = instance->width / 2 - 1;
     }
-    else if (xsp < 0){
-        side = -instance->width/2;
+    else if (xsp < 0) {
+        side = -instance->width / 2;
     }
-    else{
+    else {
         return;
     }
-    int x   = instance->position.x;
-    int y   = instance->position.y;
-    int mid = -instance->height/2;
-    int top = -instance->height +1;
-    
+    int x = (int)instance->position.x;
+    int y = (int)instance->position.y;
+    int mid = -instance->height / 2;
+    int top = -instance->height + 1;
+
     //3 point check
-    int b = MapGetTile((x+side+xsp)>>TILE_SHIFT, y >>TILE_SHIFT)        > EMPTY;
-    int m = MapGetTile((x+side+xsp)>>TILE_SHIFT, (y+mid) >>TILE_SHIFT)  > EMPTY;
-    int t = MapGetTile((x+side+xsp)>>TILE_SHIFT, (y+top) >>TILE_SHIFT)  > EMPTY;
+    int b = MapGetTile((x + side + xsp) >> TILE_SHIFT, y >> TILE_SHIFT) > EMPTY;
+    int m = MapGetTile((x + side + xsp) >> TILE_SHIFT, (y + mid) >> TILE_SHIFT) > EMPTY;
+    int t = MapGetTile((x + side + xsp) >> TILE_SHIFT, (y + top) >> TILE_SHIFT) > EMPTY;
     //if using slopes it's better to disable b & m if (x,y) is in the slope tile
-    if(b || m || t){
-        if(xsp > 0){
-            x = ((x+side+xsp) & ~TILE_ROUND) -1 -side;
+    if (b || m || t) {
+        if (xsp > 0) {
+            x = ((x + side + xsp) & ~TILE_ROUND) - 1 - side;
         }
-        else{
-            x = ((x+side+xsp) & ~TILE_ROUND) +TILE_SIZE -side;
+        else {
+            x = ((x + side + xsp) & ~TILE_ROUND) + TILE_SIZE - side;
         }
-        instance->position.x = x;
+        instance->position.x = (float)x;
         instance->velocity.x = 0.0;
         instance->hsp = 0.0;
     }
 }
 
-void CollisionVerticalBlocks(Entity *instance){
+void CollisionVerticalBlocks(Entity* instance) {
     //get vertical speed in pixels
-    float yVel = instance->velocity.y*delta + instance->vsp;
-    int ysp = ((int)(abs(yVel)) >> 12) * sign(yVel);
-    
+    float yVel = instance->velocity.y * delta + instance->vsp;
+    int ysp = ((abs((int)yVel)) >> 12) * sign(yVel);
+
     //get bounding box side offset
     int side;
-    if (ysp > 0){
+    if (ysp > 0) {
         side = 0;
     }
-    else if (ysp < 0){
-        side = -instance->height+1;
+    else if (ysp < 0) {
+        side = -instance->height + 1;
     }
-    else{
+    else {
         return;
     }
-    int x = instance->position.x;
-    int y = instance->position.y;
-    int xl = -instance->width/2;
-    int xr = instance->width/2-1;
-    
-    int c = MapGetTile(x >>TILE_SHIFT, (y+side+ysp) >>TILE_SHIFT) > EMPTY;
-    int l = MapGetTile((x+xl) >>TILE_SHIFT, (y+side+ysp) >>TILE_SHIFT) > EMPTY;
-    int r = MapGetTile((x+xr) >>TILE_SHIFT, (y+side+ysp) >>TILE_SHIFT) > EMPTY;
-    if(c || l || r){
-        if(ysp > 0){
-            y = ((y+side+ysp) & ~TILE_ROUND) -1 -side;
+    int x = (int)instance->position.x;
+    int y = (int)instance->position.y;
+    int xl = -instance->width / 2;
+    int xr = instance->width / 2 - 1;
+
+    int c = MapGetTile(x >> TILE_SHIFT, (y + side + ysp) >> TILE_SHIFT) > EMPTY;
+    int l = MapGetTile((x + xl) >> TILE_SHIFT, (y + side + ysp) >> TILE_SHIFT) > EMPTY;
+    int r = MapGetTile((x + xr) >> TILE_SHIFT, (y + side + ysp) >> TILE_SHIFT) > EMPTY;
+    if (c || l || r) {
+        if (ysp > 0) {
+            y = ((y + side + ysp) & ~TILE_ROUND) - 1 - side;
         }
-        else{
-            y = ((y+side+ysp) & ~TILE_ROUND) +TILE_SIZE -side;
+        else {
+            y = ((y + side + ysp) & ~TILE_ROUND) + TILE_SIZE - side;
         }
-        instance->position.y = y;
+        instance->position.y = (float)y;
         instance->velocity.y = 0.0;
         instance->vsp = 0.0;
     }
