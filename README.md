@@ -7,5 +7,7 @@ For collision detection is used arbitrary collision box in form of 8 points arou
 The tile map array needs only hold an index for a tile type.
 
 Modern touch is also in a form of object oriented programming using structs for Entity and Input, that can be used for player and enemies alike. 
-Input instance is referenced and used as controller for Entity to control movement.
+Input instance is referenced and used as controller for Entity to control movement.    
+Main influence is [Lizard](https://rainwarrior.itch.io/lizard) which source is amazing learning material.
+
 ![](https://raw.githubusercontent.com/nezvers/Raylib_TrueTileCollision/main/preview.gif)
