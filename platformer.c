@@ -155,7 +155,7 @@ int main(void){
     //---------------------------------------------------------
     TILE_MAP_WIDTH = 20;
     TILE_MAP_HEIGHT = 12;
-    screenScale = 3.0;
+    screenScale = 2.0;
     screenWidth = TILE_SIZE * TILE_MAP_WIDTH * (int)screenScale;
     screenHeight = TILE_SIZE * TILE_MAP_HEIGHT * (int)screenScale;
     
