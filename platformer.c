@@ -33,7 +33,7 @@
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
 //----------------------------------------------------------------------------------
-
+// Object storing inputs for Entity
 typedef struct Input {
     bool right;
     bool left;
@@ -42,6 +42,7 @@ typedef struct Input {
     bool jump;
 } Input;
 
+// Physics body moving around
 typedef struct Entity {
     int width;
     int height;
@@ -65,6 +66,7 @@ typedef struct Entity {
     Input *control;
 } Entity;
 
+// Coin object
 typedef struct Coin{
     Vector2 position;
     bool visible;
@@ -77,6 +79,7 @@ const int TILE_SIZE = 16;
 const int TILE_SHIFT = 4;   //used in bitshift  | bit of TILE_SIZE
 const int TILE_ROUND = 15;  //used in bitwise operation | TILE_SIZE - 1
 
+// Defined map size
 #define TILE_MAP_WIDTH 20
 #define TILE_MAP_HEIGHT 12
 
@@ -93,6 +96,7 @@ static Entity player = { 0 };
 static Input input = {false, false, false, false, false};
 static Camera2D camera = {0};
 
+// Create coin instances
 #define coinCount 10
 static Coin coins[coinCount] = {
     {(Vector2){1*16+6,7*16+6}, true},
@@ -206,11 +210,13 @@ void GameInit(void){
 
 // Update game (one frame)
 void GameUpdate(void){
+    // get time since last frame
     delta = GetFrameTime();
     
     PlayerUpdate();
     CoinUpdate();
     
+    // If all coins are collected
     if(win){
         if (IsKeyPressed(KEY_ENTER)){
             GameInit();
@@ -218,10 +224,10 @@ void GameUpdate(void){
     }
 }
 
-// Draw game (one frame)
+// Draw game (every frame)
 void GameDraw(void){
     BeginDrawing();
-    BeginMode2D(camera);
+        BeginMode2D(camera);
         ClearBackground(RAYWHITE);
 
         // Draw game
@@ -245,7 +251,7 @@ void GameUnload(void){
 }
 
 void MapInit(void){
-    //Set tiles - borders
+    //Set tiles as borders
     for (int y = 0; y < TILE_MAP_HEIGHT; y++){
         for (int x = 0; x < TILE_MAP_WIDTH; x++){
             // Solid tiles
@@ -276,7 +282,7 @@ void MapInit(void){
 }
 
 void MapDraw(void){
-    //parse through tile map and draw rectangles
+    //parse through tile map and draw rectangles to visualize it
     for (int y = 0; y < TILE_MAP_HEIGHT; y++){
         for (int x = 0; x < TILE_MAP_WIDTH; x++){
             // Draw tiles
@@ -287,6 +293,7 @@ void MapDraw(void){
     }
 }
 
+// Function to get tile index using world coordinates
 int MapGetTileWorld(int x, int y){
     //Returns tile ID using world position
     x /= TILE_SIZE;
@@ -297,6 +304,7 @@ int MapGetTileWorld(int x, int y){
     return tiles[x+y*TILE_MAP_WIDTH];
 }
 
+// Function to get tile index using tile map coordinates
 int MapGetTile(int x, int y){
     //Returns tile ID using tile position withing tile map.
     if (x < 0 || x > TILE_MAP_WIDTH || y < 0 || y > TILE_MAP_HEIGHT) {
@@ -305,6 +313,7 @@ int MapGetTile(int x, int y){
     return tiles[x+y*TILE_MAP_WIDTH];
 }
 
+// Returns one pixel above the tile in world coordinates
 int TileHeight(int x, int y, int tile){
     //returns one pixel above solid. Extendable for slopes.
     switch(tile){
@@ -317,13 +326,14 @@ int TileHeight(int x, int y, int tile){
     return y;
 }
 
+// Update player controlled Input instance
 void InputUpdate(void){
     input.right = (float)( IsKeyDown('D') || IsKeyDown(KEY_RIGHT) );
     input.left = (float)( IsKeyDown('A') || IsKeyDown(KEY_LEFT) );
     input.up = (float)( IsKeyDown('W') || IsKeyDown(KEY_UP) );
     input.down = (float)( IsKeyDown('S') || IsKeyDown(KEY_DOWN) );
 
-    //For jumping button needs to be toggled
+    //For jumping button needs to be toggled - allows pre-jump buffered (if held, jumps as soon as lands)
     if (IsKeyPressed(KEY_SPACE)){
         input.jump = true;
     }
@@ -332,6 +342,7 @@ void InputUpdate(void){
     }
 }
 
+// Init player controlled instance
 void PlayerInit(void){
     player.position.x = (float)(TILE_SIZE * TILE_MAP_WIDTH) * 0.5;
     player.position.y = TILE_MAP_HEIGHT*TILE_SIZE - 16.0 -1;
@@ -353,25 +364,29 @@ void PlayerInit(void){
     player.isGrounded   = false;
     player.isJumping    = false;
     
+    // Assign Input instance used by player
     player.control = &input;
 }
 
+// Draw player representing rectangle so the position is at bottom middle
 void PlayerDraw(void){
     DrawRectangle(player.position.x - player.width*0.5, player.position.y-player.height +1, player.width, player.height, RED);
 }
 
+// Player's instance update 
 void PlayerUpdate(void){
     InputUpdate();
     EntityMoveUpdate(&player);
 }
 
-
+// Reset coin visibility
 void CoinInit(void){
     for(int i=0; i<coinCount; i++){
         coins[i].visible = true;
     }
 }
 
+// Draw each coin
 void CoinDraw(void){
     for(int i=0; i<coinCount; i++){
         if(coins[i].visible){
@@ -380,6 +395,7 @@ void CoinDraw(void){
     }
 }
 
+// Collision check each coin
 void CoinUpdate(void){
     Rectangle playerRect = (Rectangle){player.position.x - player.width*0.5, player.position.y-player.height +1, player.width, player.height};
     for(int i=0; i<coinCount; i++){
@@ -397,46 +413,57 @@ void CoinUpdate(void){
 //------------------------------------------------
 // Physics functions
 //------------------------------------------------
+
+// Main Entity movement calculation
 void EntityMoveUpdate(Entity* instance) {
     GroundCheck(instance);
     GetDirection(instance);
     MoveCalc(instance);
     GravityCalc(instance);
     CollisionCheck(instance);
-
+    
+    // Horizontal velocity together including last frame sub-pixel value
     float xVel = instance->velocity.x * delta + instance->hsp;
+    // Horizontal velocity in pixel values
     float xsp = (float)abs((int)xVel) * sign(xVel);
+    // Save horizontal velocity sub-pixel value for next frame
     instance->hsp = instance->velocity.x * delta - xsp;
 
+    // Vertical velocity together including last frame sub-pixel value
     float yVel = instance->velocity.y * delta + instance->vsp;
+    // Vertical velocity in pixel values
     float ysp = (float)abs((int)yVel) * sign(yVel);
+    // Save Vertical velocity sub-pixel value for next frame
     instance->vsp = instance->velocity.y * delta - ysp;
 
-
+    // Add pixel value velocity to the position
     instance->position.x += xsp;
-
     instance->position.y += ysp;
 
-    //Prototyping Safety net
+    //Prototyping Safety net - keep in view
     instance->position.x = Clamp(instance->position.x, 0.0, TILE_MAP_WIDTH * (float)TILE_SIZE);
     instance->position.y = Clamp(instance->position.y, 0.0, TILE_MAP_HEIGHT * (float)TILE_SIZE);
 }
 
+// Read Input for horizontal movement direction
 void GetDirection(Entity* instance) {
     instance->direction = (float)(instance->control->right - instance->control->left);
 }
 
+// Check pixel bellow to determine if Entity is grounded
 void GroundCheck(Entity* instance) {
     int x = (int)instance->position.x;
     int y = (int)instance->position.y + 1;
     instance->isGrounded = false;
-
+    
+    // Center point check
     int c = MapGetTile(x >> TILE_SHIFT, y >> TILE_SHIFT);
     if (c != EMPTY) {
         int h = TileHeight(x, y, c);
         instance->isGrounded = (y >= h);
     }
     if (!instance->isGrounded) {
+        // Left bottom corner check
         int xl = (x - instance->width / 2);
         int l = MapGetTile(xl >> TILE_SHIFT, y >> TILE_SHIFT);
         if (l != EMPTY) {
@@ -444,6 +471,7 @@ void GroundCheck(Entity* instance) {
             instance->isGrounded = (y >= h);
         }
         if (!instance->isGrounded) {
+            // Right bottom corner check
             int xr = (x + instance->width / 2 - 1);
             int r = MapGetTile(xr >> TILE_SHIFT, y >> TILE_SHIFT);
             if (r != EMPTY) {
@@ -454,12 +482,16 @@ void GroundCheck(Entity* instance) {
     }
 }
 
+// Simplified horizontal acceleration / deacceleration logic
 void MoveCalc(Entity* instance) {
-    if (abs((int)instance->direction) > 0.01) {
+    // Check if direction value is above dead zone - direction is held
+    float deadZone = 0.0;
+    if (instance->direction > deadZone || instance->direction < -deadZone) {
         instance->velocity.x += instance->direction * instance->acc * delta;
         instance->velocity.x = Clamp(instance->velocity.x, -instance->maxSpd, instance->maxSpd);
     }
     else {
+        // No direction means deacceleration
         float xsp = instance->velocity.x;
         if (abs((int)(0 - xsp)) < instance->dcc * delta) {
             instance->velocity.x = 0;
@@ -473,12 +505,14 @@ void MoveCalc(Entity* instance) {
     }
 }
 
+// Set values when jump is activated
 void Jump(Entity* instance) {
     instance->velocity.y = instance->jumpImpulse;
     instance->isJumping = true;
     instance->isGrounded = false;
 }
 
+// 
 void GravityCalc(Entity* instance) {
     if (instance->isGrounded) {
         if (instance->isJumping) {
@@ -499,11 +533,14 @@ void GravityCalc(Entity* instance) {
             }
         }
     }
+    // Add gravity
     instance->velocity.y += instance->gravity * delta;
+    // Limit falling to negative jump value
     if (instance->velocity.y > -instance->jumpImpulse) {
         instance->velocity.y = -instance->jumpImpulse;
     }
 }
+
 
 static void CollisionHorizontalBlocks(Entity* instance);
 static void CollisionVerticalBlocks(Entity* instance);
@@ -512,12 +549,13 @@ void CollisionCheck(Entity* instance) {
     CollisionVerticalBlocks(instance);
 }
 
+// Detect and solve horizontal collision with block tiles
 void CollisionHorizontalBlocks(Entity* instance) {
-    //get horizontal speed in pixels
+    // Get horizontal speed in pixels
     float xVel = instance->velocity.x * delta + instance->hsp;
     int xsp = abs((int)xVel) * sign(xVel);
 
-    //get bounding box side offset
+    // Get bounding box side offset
     int side;
     if (xsp > 0) {
         side = instance->width / 2 - 1;
@@ -533,11 +571,11 @@ void CollisionHorizontalBlocks(Entity* instance) {
     int mid = -instance->height / 2;
     int top = -instance->height + 1;
 
-    //3 point check
+    // 3 point check
     int b = MapGetTile((x + side + xsp) >> TILE_SHIFT, y >> TILE_SHIFT) > EMPTY;
     int m = MapGetTile((x + side + xsp) >> TILE_SHIFT, (y + mid) >> TILE_SHIFT) > EMPTY;
     int t = MapGetTile((x + side + xsp) >> TILE_SHIFT, (y + top) >> TILE_SHIFT) > EMPTY;
-    //if using slopes it's better to disable b & m if (x,y) is in the slope tile
+    // If implementing slopes it's better to disable b and m, if (x,y) is in the slope tile
     if (b || m || t) {
         if (xsp > 0) {
             x = ((x + side + xsp) & ~TILE_ROUND) - 1 - side;
@@ -551,6 +589,7 @@ void CollisionHorizontalBlocks(Entity* instance) {
     }
 }
 
+// Detect and solve vertical collision with block tiles
 void CollisionVerticalBlocks(Entity* instance) {
     //get vertical speed in pixels
     float yVel = instance->velocity.y * delta + instance->vsp;
@@ -588,6 +627,7 @@ void CollisionVerticalBlocks(Entity* instance) {
     }
 }
 
+// Return sign of the floal as int (-1, 0, 1)
 int sign(float x){
     if(x < 0){
         return -1;
