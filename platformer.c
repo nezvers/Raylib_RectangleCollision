@@ -34,7 +34,7 @@
 // Types and Structures Definition
 //----------------------------------------------------------------------------------
 // Object storing inputs for Entity
-typedef struct Input {
+typedef struct {
     bool right;
     bool left;
     bool up;
@@ -43,7 +43,7 @@ typedef struct Input {
 } Input;
 
 // Physics body moving around
-typedef struct Entity {
+typedef struct {
     int width;
     int height;
 
@@ -62,12 +62,16 @@ typedef struct Entity {
 
     bool isGrounded;
     bool isJumping;
+    //flags for detecting collision
+    bool hitOnFloor;
+    bool hitOnCeiling;
+    bool hitOnWall;
     
     Input *control;
 } Entity;
 
 // Coin object
-typedef struct Coin{
+typedef struct{
     Vector2 position;
     bool visible;
 } Coin;
@@ -554,7 +558,9 @@ void CollisionHorizontalBlocks(Entity* instance) {
     // Get horizontal speed in pixels
     float xVel = instance->velocity.x * delta + instance->hsp;
     int xsp = abs((int)xVel) * sign(xVel);
-
+    
+    instance->hitOnWall = false;
+    
     // Get bounding box side offset
     int side;
     if (xsp > 0) {
@@ -586,6 +592,8 @@ void CollisionHorizontalBlocks(Entity* instance) {
         instance->position.x = (float)x;
         instance->velocity.x = 0.0;
         instance->hsp = 0.0;
+        
+        instance->hitOnWall = true;
     }
 }
 
@@ -594,7 +602,9 @@ void CollisionVerticalBlocks(Entity* instance) {
     //get vertical speed in pixels
     float yVel = instance->velocity.y * delta + instance->vsp;
     int ysp = abs((int)yVel) * sign(yVel);
-
+    instance->hitOnCeiling = false;
+    instance->hitOnFloor = false;
+    
     //get bounding box side offset
     int side;
     if (ysp > 0) {
@@ -617,9 +627,11 @@ void CollisionVerticalBlocks(Entity* instance) {
     if (c || l || r) {
         if (ysp > 0) {
             y = ((y + side + ysp) & ~TILE_ROUND) - 1 - side;
+            instance->hitOnFloor = true;
         }
         else {
             y = ((y + side + ysp) & ~TILE_ROUND) + TILE_SIZE - side;
+            instance->hitOnCeiling = true;
         }
         instance->position.y = (float)y;
         instance->velocity.y = 0.0;
