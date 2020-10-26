@@ -8,6 +8,6 @@ The tile map array needs only hold an index for a tile type.
 
 Modern touch is also in a form of object oriented programming using structs for Entity and Input, that can be used for player and enemies alike. 
 Input instance is referenced and used as controller for Entity to control movement.    
-Main influence is [Lizard](https://rainwarrior.itch.io/lizard) which source is amazing learning material.
+Main influence is [Lizard](https://rainwarrior.itch.io/lizard) which source is an amazing learning material.
 
 ![](https://raw.githubusercontent.com/nezvers/Raylib_TrueTileCollision/main/preview.gif)
