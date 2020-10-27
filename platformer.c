@@ -12,7 +12,6 @@
 ********************************************************************************************/
 
 #include "raylib.h"
-#include "raymath.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,10 +34,10 @@
 //----------------------------------------------------------------------------------
 // Object storing inputs for Entity
 typedef struct {
-    bool right;
-    bool left;
-    bool up;
-    bool down;
+    float right;
+    float left;
+    float up;
+    float down;
     bool jump;
 } Input;
 
@@ -132,6 +131,8 @@ static void GroundCheck(Entity *instance);
 static void MoveCalc(Entity *instance);
 static void GravityCalc(Entity *instance);
 static void CollisionCheck(Entity *instance);
+static void CollisionHorizontalBlocks(Entity* instance);
+static void CollisionVerticalBlocks(Entity* instance);
 
 //------------------------------------------------------------------------------------
 // Tile Functions Declaration (local)
@@ -141,19 +142,21 @@ static int MapGetTileWorld(int x, int y);
 static int TileHeight(int x, int y, int tile);
 
 static void MapInit(void);
+static void MapDraw(void);
 static void PlayerInit(void);
 static void InputUpdate(void);
 static void PlayerUpdate(void);
 static void PlayerDraw(void);
-static void MapDraw(void);
 static void CoinInit(void);
-static void CoinDraw(void);
 static void CoinUpdate(void);
+static void CoinDraw(void);
 
 //------------------------------------------------------------------------------------
 // Utility Functions Declaration (local)
 //------------------------------------------------------------------------------------
-static int sign(float x);
+int      ttc_sign(float x);
+float    ttc_abs(float x);
+float    ttc_clamp(float value, float min, float max);
 
 //------------------------------------------------------------------------------------
 // Program main entry point
@@ -429,14 +432,14 @@ void EntityMoveUpdate(Entity* instance) {
     // Horizontal velocity together including last frame sub-pixel value
     float xVel = instance->velocity.x * delta + instance->hsp;
     // Horizontal velocity in pixel values
-    float xsp = (float)abs((int)xVel) * sign(xVel);
+    int xsp = (int)ttc_abs(xVel) * ttc_sign(xVel);
     // Save horizontal velocity sub-pixel value for next frame
     instance->hsp = instance->velocity.x * delta - xsp;
 
     // Vertical velocity together including last frame sub-pixel value
     float yVel = instance->velocity.y * delta + instance->vsp;
     // Vertical velocity in pixel values
-    float ysp = (float)abs((int)yVel) * sign(yVel);
+    int ysp = (int)ttc_abs(yVel) * ttc_sign(yVel);
     // Save Vertical velocity sub-pixel value for next frame
     instance->vsp = instance->velocity.y * delta - ysp;
 
@@ -445,13 +448,13 @@ void EntityMoveUpdate(Entity* instance) {
     instance->position.y += ysp;
 
     //Prototyping Safety net - keep in view
-    instance->position.x = Clamp(instance->position.x, 0.0, TILE_MAP_WIDTH * (float)TILE_SIZE);
-    instance->position.y = Clamp(instance->position.y, 0.0, TILE_MAP_HEIGHT * (float)TILE_SIZE);
+    instance->position.x = ttc_clamp(instance->position.x, 0.0, TILE_MAP_WIDTH * (float)TILE_SIZE);
+    instance->position.y = ttc_clamp(instance->position.y, 0.0, TILE_MAP_HEIGHT * (float)TILE_SIZE);
 }
 
 // Read Input for horizontal movement direction
 void GetDirection(Entity* instance) {
-    instance->direction = (float)(instance->control->right - instance->control->left);
+    instance->direction = (instance->control->right - instance->control->left);
 }
 
 // Check pixel bellow to determine if Entity is grounded
@@ -490,14 +493,14 @@ void GroundCheck(Entity* instance) {
 void MoveCalc(Entity* instance) {
     // Check if direction value is above dead zone - direction is held
     float deadZone = 0.0;
-    if (instance->direction > deadZone || instance->direction < -deadZone) {
+    if (ttc_abs(instance->direction) > deadZone) {
         instance->velocity.x += instance->direction * instance->acc * delta;
-        instance->velocity.x = Clamp(instance->velocity.x, -instance->maxSpd, instance->maxSpd);
+        instance->velocity.x = ttc_clamp(instance->velocity.x, -instance->maxSpd, instance->maxSpd);
     }
     else {
         // No direction means deacceleration
         float xsp = instance->velocity.x;
-        if (abs((int)(0 - xsp)) < instance->dcc * delta) {
+        if (ttc_abs(0 - xsp) < instance->dcc * delta) {
             instance->velocity.x = 0;
         }
         else if (xsp > 0) {
@@ -516,7 +519,7 @@ void Jump(Entity* instance) {
     instance->isGrounded = false;
 }
 
-// 
+// Gravity calculation and Jump detection
 void GravityCalc(Entity* instance) {
     if (instance->isGrounded) {
         if (instance->isJumping) {
@@ -545,9 +548,7 @@ void GravityCalc(Entity* instance) {
     }
 }
 
-
-static void CollisionHorizontalBlocks(Entity* instance);
-static void CollisionVerticalBlocks(Entity* instance);
+// Main collision check function
 void CollisionCheck(Entity* instance) {
     CollisionHorizontalBlocks(instance);
     CollisionVerticalBlocks(instance);
@@ -557,7 +558,7 @@ void CollisionCheck(Entity* instance) {
 void CollisionHorizontalBlocks(Entity* instance) {
     // Get horizontal speed in pixels
     float xVel = instance->velocity.x * delta + instance->hsp;
-    int xsp = abs((int)xVel) * sign(xVel);
+    int xsp = (int)ttc_abs(xVel) * ttc_sign(xVel);
     
     instance->hitOnWall = false;
     
@@ -601,7 +602,7 @@ void CollisionHorizontalBlocks(Entity* instance) {
 void CollisionVerticalBlocks(Entity* instance) {
     //get vertical speed in pixels
     float yVel = instance->velocity.y * delta + instance->vsp;
-    int ysp = abs((int)yVel) * sign(yVel);
+    int ysp = (int)ttc_abs(yVel) * ttc_sign(yVel);
     instance->hitOnCeiling = false;
     instance->hitOnFloor = false;
     
@@ -640,7 +641,7 @@ void CollisionVerticalBlocks(Entity* instance) {
 }
 
 // Return sign of the floal as int (-1, 0, 1)
-int sign(float x){
+int ttc_sign(float x){
     if(x < 0){
         return -1;
     }
@@ -651,9 +652,16 @@ int sign(float x){
         return 1;
     }
 }
-
-
-
+// Return absolute value of float
+float ttc_abs(float x){
+    if(x < 0.0) x *= -1.0;
+    return x;
+}
+// clamp value between min and max
+float ttc_clamp(float value, float min, float max){
+    const float res = value < min ? min : value;
+    return res > max ? max : res;
+}
 
 
 
