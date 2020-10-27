@@ -2,7 +2,7 @@
 *
 *   raylib - sample game: platformer
 *
-*   Sample game developed by Agnis "NeZvers" Aldiòð
+*   Sample game developed by Agnis "NeZvers" AldiÅ†Å¡
 *
 *   This game has been created using raylib v3.0 (www.raylib.com)
 *   raylib is licensed under an unmodified zlib/libpng license (View raylib.h for details)
