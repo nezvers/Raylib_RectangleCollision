@@ -5,7 +5,7 @@ Example showcases:
     * Rectangle based collision for movement and collectibles
     * Integer scaling with resizable window
     * Programmer/ procedural art using only built-in shape drawing
-Main()
+Main():
     * GameInit()
         * Reset()
     * GameLoop()
