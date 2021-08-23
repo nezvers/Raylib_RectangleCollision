@@ -13,15 +13,15 @@ Function use structure:
   * GameLoop()
     * GameUpdate()
       * UpdateScreen();
-        * UpdatePlayer();
-          * RectangleCollisionUpdate(Rectangle *rect, Vector2 *velocity)
-          * RectangleResize(Rectangle *rect, Vector2 *size)
-          * RectangleListFromTiles(Rectangle *rect, Grid *grid)
-          * RectangleTileCollision(Rectangle *rect, Vector2 *velocity, RectList *list)
-        * UpdateCoin();
-      * GameDraw()
-        * DrawTileGrid()
-        * DrawTileMap()
-        * DrawCoins()
-        * DrawPlayer()
-        * DrawScoreText()
+      * UpdatePlayer();
+        * RectangleCollisionUpdate(Rectangle *rect, Vector2 *velocity)
+        * RectangleResize(Rectangle *rect, Vector2 *size)
+        * RectangleListFromTiles(Rectangle *rect, Grid *grid)
+        * RectangleTileCollision(Rectangle *rect, Vector2 *velocity, RectList *list)
+      * UpdateCoin();
+    * GameDraw()
+      * DrawTileGrid()
+      * DrawTileMap()
+      * DrawCoins()
+      * DrawPlayer()
+      * DrawScoreText()
