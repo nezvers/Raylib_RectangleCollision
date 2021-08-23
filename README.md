@@ -6,7 +6,8 @@ Example showcases:
   * Integer scaling with resizable window
   * Programmer/ procedural art using only built-in shape drawing
 
-Main():
+Function use structure.
+*Main()
   * GameInit()
     * Reset()
   * GameLoop()
