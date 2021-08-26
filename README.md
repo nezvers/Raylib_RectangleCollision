@@ -6,6 +6,8 @@ Example showcases:
   * Integer scaling with resizable window
   * Programmer/ procedural art using only built-in shape drawing
 
+![](https://raw.githubusercontent.com/nezvers/Raylib_RectangleCollision/main/Preview.gif)
+
 Function use structure:    
 * Main()
   * GameInit()
