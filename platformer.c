@@ -412,17 +412,17 @@ RectList* RectangleListFromTiles(Rectangle *rect, Grid *grid){
     
     // grid coordinates
     int X = (int)(offX / grid->s);
-    int sizeX = (int)((offX + rect->width) / grid->s) + 1;
+    int sizeX = (int)(rect->width / grid->s) + 1;
     int Y = (int)(offY / grid->s);
-    int sizeY = (int)((offY + rect->height) / grid->s) + 1;
+    int sizeY = (int)(rect->height / grid->s) + 1;
     
     RectList *list = MemAlloc(sizeof(RectList));
     list->rect = MemAlloc(sizeof(Rectangle) * sizeX * sizeY);
     list->size = 0;
     
-    for (int y = Y; y < sizeY; y++){
+    for (int y = Y; y < Y + sizeY; y++){
         if (y >= 0 && y < grid->h){
-            for (int x = X; x < sizeX; x++){
+            for (int x = X; x < X + sizeX; x++){
                 if (x >= 0 && x < grid->w){
                     int tile = grid->cell[x + y * grid->w];
                     if (tile){
