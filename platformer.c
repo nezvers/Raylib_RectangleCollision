@@ -395,12 +395,13 @@ void RectangleCollisionUpdate(Rectangle *rect, Vector2 *velocity){
 }
 
 Rectangle RectangleResize(Rectangle *rect, Vector2 *size){
-    return (Rectangle){
+    Rectangle r = (Rectangle){
         size->x > 0 ? rect->x : rect->x + size->x,
         size->y > 0 ? rect->y : rect->y + size->y,
         size->x > 0 ? rect->width + size->x : rect->width - size->x,
         size->y > 0 ? rect->height + size->y : rect->height - size->y
         };
+    return r;
 }
 
 RectList* RectangleListFromTiles(Rectangle *rect, Grid *grid){
@@ -412,9 +413,9 @@ RectList* RectangleListFromTiles(Rectangle *rect, Grid *grid){
     
     // grid coordinates
     int X = (int)(offX / grid->s);
-    int sizeX = (int)(rect->width / grid->s) + 1;
+    int sizeX = (int)((rect->width) / grid->s) + 1;
     int Y = (int)(offY / grid->s);
-    int sizeY = (int)(rect->height / grid->s) + 1;
+    int sizeY = (int)((rect->height) / grid->s) + 1;
     
     RectList *list = MemAlloc(sizeof(RectList));
     list->rect = MemAlloc(sizeof(Rectangle) * sizeX * sizeY);
@@ -442,34 +443,47 @@ RectList* RectangleListFromTiles(Rectangle *rect, Grid *grid){
 }
 
 void RectangleTileCollision(Rectangle *rect, Vector2 *velocity, RectList *list){
+    // simplify names
     Rectangle *a = rect;
-    float *spdX = &velocity->x;
-    float *spdY = &velocity->y;
-    //Because of this logic it's necessary to check in vertical order of velocity.y direction
-    bool down = velocity->y > 0; // Reverse list reading order
+    Rectangle *b;
     
+    // Rectangle to move around for checks
+    // set C on test X position
+    Rectangle c = (Rectangle){a->x + velocity->x, a->y, a->width, a->height};
+    // move on X axis
     for (int i = 0; i < list->size; i++){
-        Rectangle *b = &list->rect[down ? i : list->size -1 -i];
-        Rectangle c = (Rectangle){a->x + *spdX, a->y, a->width, a->height};
-
+        b = &list->rect[i]; // next collision Rectangle
         if (CheckCollisionRecs(c, *b)) {
-            if (*spdX > 0.0f) {
-                *spdX = (b->x - a->width) - a->x;
+            // moving to the right
+            if (velocity->x > 0.0f) {
+                // adjust velocity 
+                velocity->x = (b->x - a->width) - a->x;
             }
-            else if (*spdX < 0.0f) {
-                *spdX = (b->x + b->width) - a->x;
+            // moving to the left
+            else if (velocity->x < 0.0f) {
+                velocity->x = (b->x + b->width) - a->x;
             }
         }
-        c.x = a->x + *spdX;
-        c.y += *spdY;
-
+    }
+    // set C to resolved X position
+    c.x = a->x + velocity->x;
+    
+    
+    // move on Y axis
+    // set C on test Y position
+    c.y += velocity->y;
+    for (int i = 0; i < list->size; i++){
+        b = &list->rect[i];
         if (CheckCollisionRecs(c, *b)) {
-            if (*spdY > 0.0f) {
-                *spdY = (b->y - a->height) - a->y;
+            // moving down
+            if (velocity->y > 0.0f) {
+                velocity->y = (b->y - a->height) - a->y;
             }
-            else if (*spdY < 0.0f) {
-                *spdY = (b->y + b->height) - a->y;
+            // moving up
+            else if (velocity->y < 0.0f) {
+                velocity->y = (b->y + b->height) - a->y;
             }
+            //c.y = a->y + velocity->y;
         }
     }
 }
