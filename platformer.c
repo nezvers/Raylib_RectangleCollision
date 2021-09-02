@@ -262,6 +262,9 @@ void UpdatePlayer(){
     isGrounded = prevVel.y > 0.0f && vel.y <= 0.0001f;  // naive way to check grounded state
     player.x += vel.x;
     player.y += vel.y;
+    
+    if (prevVel.y != vel.y){vel.y = 0.0f;}
+    if (prevVel.x != vel.x){vel.x = 0.0f;}
 }
 
 void UpdateCoin(){
