@@ -244,7 +244,6 @@ void UpdatePlayer(){
                 }
             }
         }
-        prevVel = vel;   // for ground check
     }
     else{
         // TOP-DOWN
@@ -258,6 +257,7 @@ void UpdatePlayer(){
     }
     
     
+    prevVel = vel;   // for ground check
     RectangleCollisionUpdate(&player, &vel);
     isGrounded = prevVel.y > 0.0f && vel.y <= 0.0001f;  // naive way to check grounded state
     player.x += vel.x;
