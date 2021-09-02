@@ -277,7 +277,7 @@ void UpdateCoin(){
         }
     }
     
-    if (points == COIN_COUNT && IsKeyPressed(KEY_ENTER)){
+    if (IsKeyPressed(KEY_ENTER)){
         Reset();
     }
 }
