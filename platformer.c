@@ -41,6 +41,8 @@ Main()
 #include "raylib.h"
 #include "math.h"
 
+#define DEBUG
+
 //#define PLATFORM_WEB
 #if defined(PLATFORM_WEB)
     #include <emscripten/emscripten.h>
@@ -175,7 +177,9 @@ void Reset(){
 void GameUpdate(){
     
     UpdateScreen();// Adapt to resolution
+    #ifndef DEBUG
     UpdatePlayer();
+    #endif
     UpdateCoin();
 }
 
@@ -295,6 +299,9 @@ void GameDraw(){
         DrawTileGrid();
         DrawScoreText();
         DrawCoins();
+        #ifdef DEBUG
+            UpdatePlayer();
+        #endif
         DrawPlayer();
     EndTextureMode();
     
@@ -391,6 +398,12 @@ void DrawScoreText(){
 void RectangleCollisionUpdate(Rectangle *rect, Vector2 *velocity){
     Rectangle colArea = RectangleResize(rect, velocity);
     RectList *tiles = RectangleListFromTiles(&colArea, &map);
+    #ifdef DEBUG
+        for (int i = 0; i < tiles->size; i++){
+            DrawRectangleLinesEx(tiles->rect[i], 1, RED);
+        }
+    #endif
+    
     RectangleTileCollision(rect, velocity, tiles);
     // free allocated RectList memory
     MemFree(tiles->rect);
