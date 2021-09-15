@@ -1,4 +1,4 @@
-# Raylib RectangleCollision (currently broken physics)
+# Raylib RectangleCollision
 Example showcases:
   * Use of 1D array for a tilemap and using it for collision;
   * Simple movement for a platformer (WASD + space) and top-down (TAB to switch between)
