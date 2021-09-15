@@ -41,7 +41,6 @@ Main()
 #include "raylib.h"
 #include "math.h"
 
-#define DEBUG
 
 //#define PLATFORM_WEB
 #if defined(PLATFORM_WEB)
@@ -156,7 +155,7 @@ void GameInit() {
 
 void Reset(){
     const float s = 32.0f;
-    player = (Rectangle){s * 2, s * 8, s, s};
+    player = (Rectangle){s * 2, s * 6, s, s};
     points = 0;
     time = 0;
     
@@ -177,9 +176,7 @@ void Reset(){
 void GameUpdate(){
     
     UpdateScreen();// Adapt to resolution
-    #ifndef DEBUG
     UpdatePlayer();
-    #endif
     UpdateCoin();
 }
 
@@ -206,6 +203,7 @@ void UpdatePlayer(){
     static int dirY = 0;
     static Vector2 vel = {0};
     static Vector2 prevVel = {0};
+    
     
     // INPUT
     dirX = (float)(IsKeyDown(KEY_D) - IsKeyDown(KEY_A));
@@ -260,15 +258,11 @@ void UpdatePlayer(){
         }
     }
     
-    
     prevVel = vel;   // for ground check
     RectangleCollisionUpdate(&player, &vel);
     isGrounded = prevVel.y > 0.0f && vel.y <= 0.0001f;  // naive way to check grounded state
-    player.x += vel.x;
-    player.y += vel.y;
-    
-    if (prevVel.y != vel.y){vel.y = 0.0f;}
-    if (prevVel.x != vel.x){vel.x = 0.0f;}
+    //player.x += vel.x;
+    //player.y += vel.y;
 }
 
 void UpdateCoin(){
@@ -299,9 +293,6 @@ void GameDraw(){
         DrawTileGrid();
         DrawScoreText();
         DrawCoins();
-        #ifdef DEBUG
-            UpdatePlayer();
-        #endif
         DrawPlayer();
     EndTextureMode();
     
@@ -398,11 +389,6 @@ void DrawScoreText(){
 void RectangleCollisionUpdate(Rectangle *rect, Vector2 *velocity){
     Rectangle colArea = RectangleResize(rect, velocity);
     RectList *tiles = RectangleListFromTiles(&colArea, &map);
-    #ifdef DEBUG
-        for (int i = 0; i < tiles->size; i++){
-            DrawRectangleLinesEx(tiles->rect[i], 1, RED);
-        }
-    #endif
     
     RectangleTileCollision(rect, velocity, tiles);
     // free allocated RectList memory
@@ -423,15 +409,19 @@ Rectangle RectangleResize(Rectangle *rect, Vector2 *size){
 RectList* RectangleListFromTiles(Rectangle *rect, Grid *grid){
     float offX = rect->x - grid->x;
     float offY = rect->y - grid->y;
+    float offXw = rect->x - grid->x + rect->width;
+    float offYh = rect->y - grid->y + rect->height;
     // compensate flooring
     if (offX < 0.0f){offX -= grid->s;}
     if (offY < 0.0f){offY -= grid->s;}
+    if (offXw < 0.0f){offXw -= grid->s;}
+    if (offYh < 0.0f){offYh -= grid->s;}
     
     // grid coordinates
     int X = (int)(offX / grid->s);
-    int sizeX = (int)((rect->width) / grid->s) + 1;
     int Y = (int)(offY / grid->s);
-    int sizeY = (int)((rect->height) / grid->s) + 1;
+    int sizeX = (int)(offXw / grid->s) - X + 1;
+    int sizeY = (int)(offYh / grid->s) - Y + 1;
     
     RectList *list = MemAlloc(sizeof(RectList));
     list->rect = MemAlloc(sizeof(Rectangle) * sizeX * sizeY);
@@ -459,14 +449,11 @@ RectList* RectangleListFromTiles(Rectangle *rect, Grid *grid){
 }
 
 void RectangleTileCollision(Rectangle *rect, Vector2 *velocity, RectList *list){
-    // simplify names
     Rectangle *a = rect;
     Rectangle *b;
-    
-    // Rectangle to move around for checks
-    // set C on test X position
     Rectangle c = (Rectangle){a->x + velocity->x, a->y, a->width, a->height};
-    // move on X axis
+    
+    // Solve X axis separately
     for (int i = 0; i < list->size; i++){
         b = &list->rect[i]; // next collision Rectangle
         if (CheckCollisionRecs(c, *b)) {
@@ -484,7 +471,6 @@ void RectangleTileCollision(Rectangle *rect, Vector2 *velocity, RectList *list){
     // set C to resolved X position
     c.x = a->x + velocity->x;
     
-    
     // move on Y axis
     // set C on test Y position
     c.y += velocity->y;
@@ -499,9 +485,12 @@ void RectangleTileCollision(Rectangle *rect, Vector2 *velocity, RectList *list){
             else if (velocity->y < 0.0f) {
                 velocity->y = (b->y + b->height) - a->y;
             }
-            //c.y = a->y + velocity->y;
         }
     }
+    
+    rect->x += velocity->x;
+    
+    rect->y += velocity->y;
 }
 
 
