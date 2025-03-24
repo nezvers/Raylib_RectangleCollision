@@ -99,7 +99,7 @@ const int gameWidth = 32*MAP_W;
 const int gameHeight = 32*MAP_H;
 RenderTexture viewport;
 int scale = 1;
-Vector2 vpOffset = (Vector2){0.0f, 0.0f};
+Vector2 vpOffset = {0.0f, 0.0f};
 
 Rectangle player = {32.0f * 2, 32.0f * 8, 32.0f, 32.0f};
 
